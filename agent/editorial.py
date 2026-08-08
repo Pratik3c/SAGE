@@ -48,11 +48,77 @@ class EditorialDecision(BaseModel):
     reason: str
 
 
-def evaluate_topic(topic, agent):
+def evaluate_topic(topic, agent, memory=None):
+
+    memory = memory or []
+
+    memory_text = ""
+
+    for item in memory:
+
+        if item["type"] == "published_post":
+
+            memory_text += f"""
+    Previously published post:
+    {item["text"]}
+    Published at:
+    {item["createdAt"]}
+    ---
+    """
+
+        elif item["type"] == "evaluated_topic":
+
+            memory_text += f"""
+    Previously evaluated topic:
+    {item["title"]}
+
+    Decision:
+    {item["decision"]}
+
+    Reason:
+    {item["reason"]}
+    ---
+    """
 
     prompt = f"""
 You are the editorial decision engine for an autonomous AI
 technology persona.
+
+MEMORY
+
+SAGE has previously encountered the following information:
+
+{memory_text}
+
+Use this memory to avoid repetitive publishing.
+
+A topic should be rejected if it substantially repeats something
+SAGE has already published.
+
+A topic can still be published if it is a genuinely new development
+or provides a materially different angle.
+
+MEMORY RULE
+
+You must distinguish between:
+
+1. Exact repetition
+2. Substantial repetition
+3. Related but genuinely new information
+
+Exact repetition:
+REJECT.
+
+Substantial repetition without meaningful new information:
+REJECT.
+
+Related topic with significant new evidence, development,
+benchmark, release, security event, research result, or
+technical insight:
+It may still be PUBLISHED.
+
+Do not reject a topic merely because it belongs to the
+same general area as an older topic.
 
 PERSONA
 

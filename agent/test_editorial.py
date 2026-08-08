@@ -1,6 +1,14 @@
-from database import get_agent, get_pending_topics
-from editorial import evaluate_topic
+from database import (
+    get_agent,
+    get_pending_topics,
+    get_recent_posts,
+    get_recent_topics,
+    update_topic_decision
+)
 
+from memory import build_memory_context
+
+from editorial import evaluate_topic
 
 AGENT_ID = "e07dbcf8-2b48-4522-952c-ef190a0301fe"
 
@@ -18,36 +26,78 @@ def main():
         limit=5
     )
 
-    print(f"Found {len(topics)} pending topics\n")
+    posts = get_recent_posts(
+        AGENT_ID,
+        limit=10
+    )
+
+    previous_topics = get_recent_topics(
+        AGENT_ID,
+        limit=20
+    )
+
+    memory = build_memory_context(
+        posts,
+        previous_topics
+    )
+
+    print(
+        f"Loaded {len(posts)} previous posts"
+    )
+
+    print(
+        f"Loaded {len(previous_topics)} previous topics"
+    )
+
+    print(
+        f"Evaluating {len(topics)} new topics\n"
+    )
 
     for topic in topics:
 
         print("=" * 70)
 
-        print("TOPIC:")
-        print(topic["title"])
+        print(
+            "TOPIC:",
+            topic["title"]
+        )
 
         try:
 
             decision = evaluate_topic(
                 topic,
-                agent
+                agent,
+                memory
             )
 
-            print("\nDECISION:", decision.decision)
-            print("SCORE:", decision.score)
+            update_topic_decision(
+                topic["topicId"],
+                decision.decision,
+                decision.score,
+                decision.reason
+            )
 
-            print("Relevance:", decision.relevance)
-            print("Novelty:", decision.novelty)
-            print("Importance:", decision.importance)
-            print("Persona Fit:", decision.persona_fit)
+            print(
+                "\nDECISION:",
+                decision.decision
+            )
 
-            print("\nREASON:")
-            print(decision.reason)
+            print(
+                "SCORE:",
+                decision.score
+            )
+
+            print(
+                "\nREASON:",
+                decision.reason
+            )
 
         except Exception as error:
 
-            print("Gemini error:", error)
+            print(
+                "Gemini error:",
+                error
+            )
 
 
 if __name__ == "__main__":
