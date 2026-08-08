@@ -22,7 +22,7 @@ def run_cycle(agent_id):
     run_started_at = datetime.now(timezone.utc)
 
     print("=" * 60)
-    print("VANTA AUTONOMOUS CYCLE")
+    print("SAGE AUTONOMOUS CYCLE")
     print("=" * 60)
 
     print(

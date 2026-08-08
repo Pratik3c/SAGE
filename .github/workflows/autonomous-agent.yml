@@ -2,7 +2,7 @@ name: SAGE Autonomous Agent
 
 on:
   schedule:
-    - cron: "17 */2 * * *"
+    - cron: "17 */8 * * *"
 
   workflow_dispatch:
 
