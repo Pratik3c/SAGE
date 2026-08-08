@@ -84,3 +84,119 @@ def update_topic_decision(
             }
         }
     )
+
+
+def create_post(
+    post_id,
+    agent_id,
+    text,
+    rationale,
+    sources
+):
+
+    posts_collection.insert_one({
+        "postId": post_id,
+        "agentId": agent_id,
+        "text": text,
+        "rationale": rationale,
+        "sources": sources
+    })
+
+
+def update_agent_last_published(agent_id):
+
+    from datetime import datetime, timezone
+
+    agents_collection.update_one(
+        {
+            "agentId": agent_id
+        },
+        {
+            "$set": {
+                "lastPublishedAt": datetime.now(timezone.utc)
+            }
+        }
+    )
+
+def generate_topic_id(agent_id, url):
+
+    import hashlib
+
+    digest = hashlib.sha256(
+        url.encode("utf-8")
+    ).hexdigest()[:16]
+
+    return f"{agent_id}_{digest}"
+
+
+
+def save_topics(topics, agent_id):
+
+    saved = 0
+
+    for topic in topics:
+
+        existing = topics_collection.find_one({
+            "agentId": agent_id,
+            "url": topic["url"]
+        })
+
+        if existing:
+            continue
+
+        topic_document = {
+            "topicId": generate_topic_id(
+                agent_id,
+                topic["url"]
+            ),
+
+            "agentId": agent_id,
+
+            "title": topic["title"],
+
+            "url": topic["url"],
+
+            "source": topic["source"],
+
+            "summary": topic.get(
+                "summary",
+                ""
+            ),
+
+            "decision": "PENDING",
+
+            "score": 0,
+
+            "reason": "",
+
+            "discoveredAt": topic.get(
+                "publishedAt"
+            )
+        }
+
+        topics_collection.insert_one(
+            topic_document
+        )
+
+        saved += 1
+
+    return saved
+
+
+
+def update_agent_last_run(agent_id):
+
+    from datetime import datetime, timezone
+
+    agents_collection.update_one(
+        {
+            "agentId": agent_id
+        },
+        {
+            "$set": {
+                "lastRunAt": datetime.now(
+                    timezone.utc
+                )
+            }
+        }
+    )

@@ -91,7 +91,7 @@ const getFeed = async (req, res) => {
 
         const formattedPosts = posts.map((post) => ({
             id: post.postId,
-            createdAt: post.createdAt.toISOString(),
+            createdAt: post.createdAt,
             text: post.text,
             rationale: post.rationale,
             sources: post.sources
