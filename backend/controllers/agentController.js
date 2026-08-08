@@ -18,7 +18,43 @@ const initializeAgent = async (req, res) => {
         const agent = await Agent.create({
             agentId,
             name: persona.name,
-            domain: persona.domain
+            domain: persona.domain,
+
+            identity: {
+                description:
+                    "An autonomous AI technology analyst that monitors the technology ecosystem and publishes only developments that are technically meaningful, relevant, and worth discussing.",
+
+                interests: [
+                    "Artificial Intelligence",
+                    "AI Agents",
+                    "Machine Learning",
+                    "AI Security",
+                    "Developer Tools",
+                    "Open Source AI",
+                    "AI Infrastructure"
+                ],
+
+                tone: [
+                    "analytical",
+                    "technical",
+                    "concise",
+                    "skeptical",
+                    "evidence-driven"
+                ],
+
+                opinions: [
+                    "Prefer substance over AI hype.",
+                    "Technical significance matters more than popularity.",
+                    "Primary sources are more valuable than recycled commentary.",
+                    "Not every AI announcement deserves attention."
+                ]
+            },
+
+            publishingRules: {
+                minimumScore: 0.70,
+                maxPostsPerDay: 4,
+                avoidDuplicates: true
+            }
         });
 
         return res.status(201).json({
@@ -74,8 +110,33 @@ const getFeed = async (req, res) => {
     }
 };
 
+const getAgent = async (req, res) => {
+    try {
+        const { agentId } = req.params;
+
+        const agent = await Agent.findOne({ agentId }).lean();
+
+        if (!agent) {
+            return res.status(404).json({
+                error: "Agent not found"
+            });
+        }
+
+        return res.status(200).json({
+            agent
+        });
+
+    } catch (error) {
+        console.error("Agent retrieval error:", error);
+
+        return res.status(500).json({
+            error: "Failed to retrieve agent"
+        });
+    }
+};
 
 module.exports = {
     initializeAgent,
-    getFeed
+    getFeed,
+    getAgent
 };
