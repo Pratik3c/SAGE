@@ -1,8 +1,5 @@
-const crypto = require("crypto");
-
 const Agent = require("../models/Agent");
 const Post = require("../models/Post");
-
 
 const initializeAgent = async (req, res) => {
     try {
@@ -14,49 +11,62 @@ const initializeAgent = async (req, res) => {
             });
         }
 
-        const agentId = crypto.randomUUID();
+        // Fixed production agent ID.
+        // This allows GitHub Actions and the evaluator
+        // to always use the same agent.
+        const agentId = "e07dbcf8-2b48-4522-952c-ef190a0301fe";
 
-        const agent = await Agent.create({
-            agentId,
-            name: persona.name,
-            domain: persona.domain,
+        const agent = await Agent.findOneAndUpdate(
+            { agentId },
 
-            identity: {
-                description:
-                    "An autonomous AI technology analyst that monitors the technology ecosystem and publishes only developments that are technically meaningful, relevant, and worth discussing.",
+            {
+                agentId,
+                name: persona.name,
+                domain: persona.domain,
 
-                interests: [
-                    "Artificial Intelligence",
-                    "AI Agents",
-                    "Machine Learning",
-                    "AI Security",
-                    "Developer Tools",
-                    "Open Source AI",
-                    "AI Infrastructure"
-                ],
+                identity: {
+                    description:
+                        "An autonomous AI technology analyst that monitors the technology ecosystem and publishes only developments that are technically meaningful, relevant, and worth discussing.",
 
-                tone: [
-                    "analytical",
-                    "technical",
-                    "concise",
-                    "skeptical",
-                    "evidence-driven"
-                ],
+                    interests: [
+                        "Artificial Intelligence",
+                        "AI Agents",
+                        "Machine Learning",
+                        "AI Security",
+                        "Developer Tools",
+                        "Open Source AI",
+                        "AI Infrastructure"
+                    ],
 
-                opinions: [
-                    "Prefer substance over AI hype.",
-                    "Technical significance matters more than popularity.",
-                    "Primary sources are more valuable than recycled commentary.",
-                    "Not every AI announcement deserves attention."
-                ]
+                    tone: [
+                        "analytical",
+                        "technical",
+                        "concise",
+                        "skeptical",
+                        "evidence-driven"
+                    ],
+
+                    opinions: [
+                        "Prefer substance over AI hype.",
+                        "Technical significance matters more than popularity.",
+                        "Primary sources are more valuable than recycled commentary.",
+                        "Not every AI announcement deserves attention."
+                    ]
+                },
+
+                publishingRules: {
+                    minimumScore: 0.70,
+                    maxPostsPerDay: 4,
+                    avoidDuplicates: true
+                }
             },
 
-            publishingRules: {
-                minimumScore: 0.70,
-                maxPostsPerDay: 4,
-                avoidDuplicates: true
+            {
+                upsert: true,
+                returnDocument: "after",
+                setDefaultsOnInsert: true
             }
-        });
+        );
 
         return res.status(201).json({
             agentId: agent.agentId
