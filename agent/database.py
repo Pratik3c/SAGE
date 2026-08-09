@@ -1,8 +1,8 @@
 import os
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from pymongo import MongoClient
-
 
 load_dotenv()
 
@@ -16,13 +16,13 @@ topics_collection = db["topics"]
 agents_collection = db["agents"]
 posts_collection = db["posts"]
 
-def get_agent(agent_id):
 
-    # print(agent_id)
+def get_agent(agent_id):
 
     return agents_collection.find_one({
         "agentId": agent_id
     })
+
 
 def get_pending_topics(agent_id, limit=5):
 
@@ -35,6 +35,7 @@ def get_pending_topics(agent_id, limit=5):
         .limit(limit)
     )
 
+
 def get_recent_posts(agent_id, limit=10):
 
     return list(
@@ -44,6 +45,7 @@ def get_recent_posts(agent_id, limit=10):
         .sort("createdAt", -1)
         .limit(limit)
     )
+
 
 def get_recent_topics(agent_id, limit=20):
 
@@ -58,12 +60,14 @@ def get_recent_topics(agent_id, limit=20):
         .limit(limit)
     )
 
+
 def topic_url_exists(agent_id, url):
 
     return topics_collection.find_one({
         "agentId": agent_id,
         "url": url
     }) is not None
+
 
 def update_topic_decision(
     topic_id,
@@ -91,21 +95,24 @@ def create_post(
     agent_id,
     text,
     rationale,
-    sources
+    sources,
+    created_at=None
 ):
+
+    if created_at is None:
+        created_at = datetime.now(timezone.utc)
 
     posts_collection.insert_one({
         "postId": post_id,
         "agentId": agent_id,
         "text": text,
         "rationale": rationale,
-        "sources": sources
+        "sources": sources,
+        "createdAt": created_at
     })
 
 
 def update_agent_last_published(agent_id):
-
-    from datetime import datetime, timezone
 
     agents_collection.update_one(
         {
@@ -118,6 +125,7 @@ def update_agent_last_published(agent_id):
         }
     )
 
+
 def generate_topic_id(agent_id, url):
 
     import hashlib
@@ -127,7 +135,6 @@ def generate_topic_id(agent_id, url):
     ).hexdigest()[:16]
 
     return f"{agent_id}_{digest}"
-
 
 
 def save_topics(topics, agent_id):
@@ -183,10 +190,7 @@ def save_topics(topics, agent_id):
     return saved
 
 
-
 def update_agent_last_run(agent_id):
-
-    from datetime import datetime, timezone
 
     agents_collection.update_one(
         {

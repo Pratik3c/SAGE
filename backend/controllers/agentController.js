@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const Agent = require("../models/Agent");
 const Post = require("../models/Post");
 
+
 const initializeAgent = async (req, res) => {
     try {
         const { persona } = req.body;
@@ -84,17 +85,23 @@ const getFeed = async (req, res) => {
         const posts = await Post.find({
             agentId
         })
-            .sort({
-                createdAt: -1
-            })
-            .lean();
+        .sort({
+            createdAt: -1
+        })
+        .lean();
 
         const formattedPosts = posts.map((post) => ({
             id: post.postId,
-            createdAt: post.createdAt,
+
+            createdAt: post.createdAt
+                ? new Date(post.createdAt).toISOString()
+                : null,
+
             text: post.text,
+
             rationale: post.rationale,
-            sources: post.sources
+
+            sources: post.sources || []
         }));
 
         return res.status(200).json({
@@ -110,11 +117,14 @@ const getFeed = async (req, res) => {
     }
 };
 
+
 const getAgent = async (req, res) => {
     try {
         const { agentId } = req.params;
 
-        const agent = await Agent.findOne({ agentId }).lean();
+        const agent = await Agent.findOne({
+            agentId
+        }).lean();
 
         if (!agent) {
             return res.status(404).json({
@@ -134,6 +144,7 @@ const getAgent = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     initializeAgent,

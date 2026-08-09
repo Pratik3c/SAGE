@@ -6,9 +6,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 
-
 load_dotenv()
-
 
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
@@ -59,32 +57,45 @@ def evaluate_topic(topic, agent, memory=None):
         if item["type"] == "published_post":
 
             memory_text += f"""
-    Previously published post:
-    {item["text"]}
-    Published at:
-    {item["createdAt"]}
-    ---
-    """
+Previously published post:
+
+{item["text"]}
+
+Published at:
+{item["createdAt"]}
+
+---
+"""
 
         elif item["type"] == "evaluated_topic":
 
             memory_text += f"""
-    Previously evaluated topic:
-    {item["title"]}
+Previously evaluated topic:
 
-    Decision:
-    {item["decision"]}
+{item["title"]}
 
-    Reason:
-    {item["reason"]}
-    ---
-    """
+Decision:
+{item["decision"]}
+
+Reason:
+{item["reason"]}
+
+---
+"""
 
     prompt = f"""
 You are the editorial decision engine for an autonomous AI
-technology persona.
+and technology persona.
 
+Your job is NOT to publish everything that looks interesting.
+
+Your job is to decide whether a topic is genuinely worth
+this persona spending one of its limited publishing opportunities on.
+
+
+==================================================
 MEMORY
+==================================================
 
 SAGE has previously encountered the following information:
 
@@ -92,15 +103,12 @@ SAGE has previously encountered the following information:
 
 Use this memory to avoid repetitive publishing.
 
-A topic should be rejected if it substantially repeats something
-SAGE has already published.
 
-A topic can still be published if it is a genuinely new development
-or provides a materially different angle.
-
+==================================================
 MEMORY RULE
+==================================================
 
-You must distinguish between:
+Distinguish between:
 
 1. Exact repetition
 2. Substantial repetition
@@ -112,15 +120,17 @@ REJECT.
 Substantial repetition without meaningful new information:
 REJECT.
 
-Related topic with significant new evidence, development,
-benchmark, release, security event, research result, or
-technical insight:
-It may still be PUBLISHED.
+A related topic with significant new evidence, development,
+benchmark, release, security event, research result, technical
+change, or genuinely different insight may still be PUBLISHED.
 
-Do not reject a topic merely because it belongs to the
-same general area as an older topic.
+Do not reject a topic merely because it belongs to the same
+general technology area as an older topic.
 
+
+==================================================
 PERSONA
+==================================================
 
 Name:
 {agent["name"]}
@@ -143,7 +153,10 @@ Editorial opinions:
 Publishing threshold:
 {agent["publishingRules"]["minimumScore"]}
 
+
+==================================================
 TOPIC
+==================================================
 
 Title:
 {topic["title"]}
@@ -157,43 +170,115 @@ URL:
 Summary:
 {topic.get("summary", "")}
 
-TASK
 
-Decide whether this topic deserves publication.
+==================================================
+EDITORIAL CRITERIA
+==================================================
 
-The persona should NOT publish something merely because it
-is popular or related to AI.
+Evaluate the topic on:
+
+RELEVANCE
+
+Does this genuinely relate to AI, software, technology,
+engineering, infrastructure, security, data, or another
+important area within the persona's domain?
+
+NOVELTY
+
+Does it provide something new compared with the persona's
+existing memory?
+
+IMPORTANCE
+
+Does the development actually matter?
+
+Would a technically informed reader learn something useful
+from discussing it?
+
+PERSONA FIT
+
+Does this topic naturally fit the persona's interests,
+identity, opinions, and voice?
+
+DISCUSSION VALUE
+
+Can the persona form a meaningful technical observation,
+interpretation, or opinion around this topic?
+
+
+==================================================
+PUBLISHING PREFERENCES
+==================================================
 
 Prefer topics that:
 
 - have genuine technical significance
-- are relevant to AI and technology
-- provide meaningful information
-- have credible sourcing
-- fit the persona's interests
-- contain something worth discussing
-- are sufficiently novel
+- contain meaningful information
+- have credible sources
+- provide a useful engineering lesson
+- reveal an interesting technical tradeoff
+- represent a meaningful release or development
+- contain new research or evidence
+- involve important AI developments
+- involve meaningful security events
+- reveal an interesting engineering decision
+- challenge an assumption or popular technology trend
+- provide something worth discussing rather than merely reporting
 
-Reject topics that are:
 
+==================================================
+REJECT TOPICS THAT ARE
+==================================================
+
+- unrelated to technology
 - generic
 - repetitive
 - promotional
 - low-information
-- unrelated to the persona
-- clickbait
 - trivial
-- merely popular without substance
+- clickbait
+- unsupported
+- primarily entertainment
+- primarily lifestyle content
+- merely popular without substantive value
+- impossible to discuss meaningfully from a technical perspective
+
+
+==================================================
+IMPORTANT
+==================================================
+
+Do NOT publish something simply because:
+
+- it mentions AI
+- it is trending
+- it has many views
+- it comes from a popular source
+- it contains the word "AI"
+- it sounds futuristic
+
+The persona should demonstrate editorial judgment.
+
+A strong autonomous creator should reject more topics
+than it publishes.
+
+==================================================
+DECISION
+==================================================
 
 Return a score from 0 to 1.
 
-The decision MUST be:
+The final decision MUST be:
 
-PUBLISH if the score meets or exceeds the publishing threshold.
+PUBLISH if the score meets or exceeds:
+
+{agent["publishingRules"]["minimumScore"]}
 
 REJECT otherwise.
 
-Explain the decision clearly.
+Explain the decision clearly and specifically.
+
+Return ONLY the structured response.
 """
 
     response = client.models.generate_content(
